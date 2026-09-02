@@ -20,4 +20,16 @@ package() {
     install -Dm755 "$srcdir/dist/bin/DevarioWelcome" "$pkgdir/usr/bin/devario-welcome"
     install -Dm644 "$srcdir/dist/share/glib-2.0/schemas/gschemas.compiled" \
         "$pkgdir/usr/share/glib-2.0/schemas/gschemas.compiled"
+
+    install -dm755 "$pkgdir/usr/share/applications"
+    cat > "$pkgdir/usr/share/applications/devario-welcome.desktop" <<'EOF'
+[Desktop Entry]
+Name=Devario Welcome
+Comment=Welcome application for Devario OS
+Exec=devario-welcome
+Icon=devario-welcome
+Terminal=false
+Type=Application
+Categories=GTK;System;
+EOF
 }
