@@ -36,10 +36,22 @@ pub fn build(b: *std.Build) void {
 
     b.installArtifact(exe);
 
+    // Compile GSettings schema
+    const schemas_dir = b.fmt("{s}/share/glib-2.0/schemas", .{b.install_path});
+    const mkdir_schemas = b.addSystemCommand(&.{ "mkdir", "-p", schemas_dir });
+    const compile_schemas = b.addSystemCommand(&.{"glib-compile-schemas"});
+    compile_schemas.addDirectoryArg(b.path("data"));
+    compile_schemas.addArg("--targetdir");
+    compile_schemas.addArg(schemas_dir);
+    compile_schemas.addFileInput(b.path("data/com.devario.welcome.gschema.xml"));
+    compile_schemas.step.dependOn(&mkdir_schemas.step);
+    b.getInstallStep().dependOn(&compile_schemas.step);
+
     const run_step = b.step("run", "Run the app");
     const run_cmd = b.addRunArtifact(exe);
     run_step.dependOn(&run_cmd.step);
     run_cmd.step.dependOn(b.getInstallStep());
+    run_cmd.setEnvironmentVariable("GSETTINGS_SCHEMA_DIR", b.fmt("{s}/share/glib-2.0/schemas", .{b.install_path}));
     if (b.args) |args| run_cmd.addArgs(args);
 
     const mod_tests = b.addTest(.{ .root_module = mod });
