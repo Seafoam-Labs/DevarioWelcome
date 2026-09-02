@@ -1,4 +1,3 @@
-# Maintainer: Caroline Snyder <hirpeng@gmail.com>
 pkgname=devario-welcome
 pkgver=0.0.1
 pkgrel=1
@@ -8,7 +7,7 @@ url="https://github.com/Seafoam-Labs/DevarioWelcome"
 license=('GPL3')
 depends=('gtk4' 'glib2')
 makedepends=('zig>=0.16')
-source=("${pkgname}::git+${url}.git#tag=v${pkgver}")
+source=("${pkgname}::git+${url}.git#branch=main")
 sha256sums=('SKIP')
 
 build() {
