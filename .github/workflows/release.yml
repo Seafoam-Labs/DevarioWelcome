@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    container:
+      image: archlinux:latest
+
+    steps:
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --needed --noconfirm zig base-devel gtk4 glib2 glibc git curl pkgconf
+
+      - uses: actions/checkout@v6
+
+      - name: Build DevarioWelcome
+        run: |
+          zig build --verbose \
+            --prefix publish/build \
+            -Dcpu=baseline \
+            -Doptimize=ReleaseSafe \
+            install
+
+      - name: Run tests
+        run: zig build test
+
+      - name: Publish
+        run: |
+          mkdir -p publish/devario-welcome
+          install -Dm755 publish/build/bin/DevarioWelcome publish/devario-welcome/devario-welcome
+          install -Dm644 publish/build/share/glib-2.0/schemas/gschemas.compiled publish/devario-welcome/gschemas.compiled
+          install -Dm644 data/com.devario.welcome.gschema.xml publish/devario-welcome/
+          install -m644 LICENSE publish/devario-welcome/
+
+      - name: Create tarball
+        run: tar -czf publish/DevarioWelcome-linux-x64.tar.gz -C publish/devario-welcome .
+
+      - name: Generate SHA256 checksums
+        run: |
+          cd publish
+          VERSION=${GITHUB_REF#refs/tags/}
+          curl -sL "https://github.com/Seafoam-Labs/DevarioWelcome/archive/${VERSION}.tar.gz" -o "source-${VERSION}.tar.gz"
+          sha256sum "source-${VERSION}.tar.gz" | sed "s/source-${VERSION}.tar.gz/${VERSION}.tar.gz/" > SHA256SUMS.txt
+          sha256sum DevarioWelcome-linux-x64.tar.gz >> SHA256SUMS.txt
+          rm "source-${VERSION}.tar.gz"
+          cat SHA256SUMS.txt
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            publish/DevarioWelcome-linux-x64.tar.gz
+            publish/SHA256SUMS.txt
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
